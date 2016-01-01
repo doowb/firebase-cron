@@ -9,8 +9,8 @@ var cron = require('./app');
 
 var i = 1;
 async.eachSeries(['A', 'B', 'C'], function(name, next) {
-  var tab = '1-' + ((i++) * 10) + '/5 * * * * *';
-  cron.addJob(name, tab, {name: name}, next);
+  var pattern = '1-' + ((i++) * 10) + '/5 * * * * *';
+  cron.addJob(name, pattern, {name: name}, next);
 }, function(err) {
   if (err) console.error(err);
   console.log('done');

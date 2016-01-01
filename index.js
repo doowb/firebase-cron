@@ -52,17 +52,17 @@ function Cron(ref, queue, options) {
  * Add a new cron job.
  *
  * @param {String} `name` Name of the cron job.
- * @param {String} `tab` Cron job schedule. See [cron job patterns]() for specifics.
+ * @param {String} `pattern` Cron job pattern. See [cron job patterns](http://crontab.org/) for specifics.
  * @param {Object} `data` Data to be pushed onto the [firebase-queue][] when job is run.
  * @param {Function} `cb` Callback function that is called after the job is added to the database.
  * @api public
  */
 
-Cron.prototype.addJob = function(name, tab, data, cb) {
-  var schedule = utils.cron.time(tab);
+Cron.prototype.addJob = function(name, pattern, data, cb) {
+  var schedule = utils.cron.time(pattern);
   var next = schedule._getNextDateFrom(this.remoteDate());
   var job = {
-    tab: tab,
+    pattern: pattern,
     nextRun: +next,
     data: data
   };
@@ -73,17 +73,17 @@ Cron.prototype.addJob = function(name, tab, data, cb) {
  * Update a cron job.
  *
  * @param {String} `name` Name of the cron job.
- * @param {String} `tab` Cron job schedule. See [cron job patterns]() for specifics.
+ * @param {String} `pattern` Cron job pattern. See [cron job patterns](http://crontab.org/) for specifics.
  * @param {Object} `data` Data to be pushed onto the [firebase-queue][] when job is run.
  * @param {Function} `cb` Callback function that is called after the job is updated in the database.
  * @api public
  */
 
-Cron.prototype.updateJob = function(name, tab, data, cb) {
-  var schedule = utils.cron.time(tab);
+Cron.prototype.updateJob = function(name, pattern, data, cb) {
+  var schedule = utils.cron.time(pattern);
   var next = schedule._getNextDateFrom(this.remoteDate());
   var job = {
-    tab: tab,
+    pattern: pattern,
     nextRun: +next,
     data: data
   };
@@ -187,7 +187,7 @@ Cron.prototype.run = function(cb, error) {
 
       cb(jobs);
       utils.async.eachOf(jobs, function(job, name, next) {
-        var schedule = utils.cron.time(job.tab);
+        var schedule = utils.cron.time(job.pattern);
         var lastRun = new Date(job.nextRun);
         lastRun.setSeconds(lastRun.getSeconds() + 1);
         job.nextRun = +schedule._getNextDateFrom(lastRun);

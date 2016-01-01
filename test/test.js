@@ -65,10 +65,10 @@ describe('firebase-cron', function() {
       var data = ref.getData();
       assert(data.hasOwnProperty('jobs'));
       assert(data.jobs.hasOwnProperty('test'));
-      assert(data.jobs.test.hasOwnProperty('tab'));
+      assert(data.jobs.test.hasOwnProperty('pattern'));
       assert(data.jobs.test.hasOwnProperty('data'));
       assert(data.jobs.test.hasOwnProperty('nextRun'));
-      assert.deepEqual(data.jobs.test.tab, '* * * * * *');
+      assert.deepEqual(data.jobs.test.pattern, '* * * * * *');
       assert.deepEqual(data.jobs.test.data, {foo: 'bar'});
       done();
     });
@@ -82,10 +82,10 @@ describe('firebase-cron', function() {
         var data = ref.getData();
         assert(data.hasOwnProperty('jobs'));
         assert(data.jobs.hasOwnProperty('test'));
-        assert(data.jobs.test.hasOwnProperty('tab'));
+        assert(data.jobs.test.hasOwnProperty('pattern'));
         assert(data.jobs.test.hasOwnProperty('data'));
         assert(data.jobs.test.hasOwnProperty('nextRun'));
-        assert.deepEqual(data.jobs.test.tab, '00 * * * * *');
+        assert.deepEqual(data.jobs.test.pattern, '00 * * * * *');
         assert.deepEqual(data.jobs.test.data, {bar: 'baz'});
         done();
       });
@@ -99,10 +99,10 @@ describe('firebase-cron', function() {
       cron.getJob('test', function(err, job) {
         if (err) return done(err);
         assert(job);
-        assert(job.hasOwnProperty('tab'));
+        assert(job.hasOwnProperty('pattern'));
         assert(job.hasOwnProperty('data'));
         assert(job.hasOwnProperty('nextRun'));
-        assert.deepEqual(job.tab, '* * * * * *');
+        assert.deepEqual(job.pattern, '* * * * * *');
         assert.deepEqual(job.data, {foo: 'bar'});
         done();
       });

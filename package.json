@@ -10,7 +10,8 @@
   },
   "license": "MIT",
   "files": [
-    "index.js"
+    "index.js",
+    "lib"
   ],
   "main": "index.js",
   "engines": {
@@ -19,8 +20,16 @@
   "scripts": {
     "test": "mocha"
   },
-  "dependencies": {},
+  "dependencies": {
+    "async": "^1.5.0",
+    "cron": "^1.1.0",
+    "firebase": "^2.3.2",
+    "firebase-queue": "^1.2.1",
+    "lazy-cache": "^1.0.3",
+    "moment": "^2.10.6"
+  },
   "devDependencies": {
+    "ansi-colors": "^0.1.0",
     "mocha": "*",
     "should": "*"
   },

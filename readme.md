@@ -49,7 +49,7 @@ Add a new cron job.
 **Params**
 
 * `name` **{String}**: Name of the cron job.    
-* `tab` **{String}**: Cron job schedule. See [cron job patterns]() for specifics.    
+* `pattern` **{String}**: Cron job pattern. See [cron job patterns](http://crontab.org/) for specifics.    
 * `data` **{Object}**: Data to be pushed onto the [firebase-queue][] when job is run.    
 * `cb` **{Function}**: Callback function that is called after the job is added to the database.    
 
@@ -62,7 +62,7 @@ Update a cron job.
 **Params**
 
 * `name` **{String}**: Name of the cron job.    
-* `tab` **{String}**: Cron job schedule. See [cron job patterns]() for specifics.    
+* `pattern` **{String}**: Cron job pattern. See [cron job patterns](http://crontab.org/) for specifics.    
 * `data` **{Object}**: Data to be pushed onto the [firebase-queue][] when job is run.    
 * `cb` **{Function}**: Callback function that is called after the job is updated in the database.    
 

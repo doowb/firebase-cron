@@ -13,13 +13,18 @@ var utils = require('./lib/utils');
  * Main `Cron` class for creating a new instance to manage cron jobs.
  *
  * ```js
+ * var Firebase = require('firebase');
+ * var ref = new Firebase('https://{your-firebase}.firebaseio.com');
+ * var queueRef = new Firebase('https://{your-firebase}.firebaseio.com/queue');
+ * var options = {endpoint: 'jobs'};
+ *
  * var cron = new Cron(ref, queueRef, options);
  * ```
  *
  * @param {Object} `ref` Instance of a [firebase][] reference pointing to the root of a [firebase][].
  * @param {Object} `queue` Instance of a [firebase][] refernece pointing to a [firebase-queue][].
  * @param {Object} `options` Options specifying where the cron jobs are stored.
- * @param {String} `options.endpoint` Specific endpoint relative to the `ref` where the cron jobs are stored.
+ * @param {String} `options.endpoint` Specific endpoint relative to the `ref` where the cron jobs are stored (defaults to `jobs`.
  * @api public
  */
 

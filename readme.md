@@ -12,12 +12,12 @@ $ npm i firebase-cron --save
 ## Usage
 
 ```js
-var firebaseCron = require('firebase-cron');
+var Cron = require('firebase-cron');
 ```
 
 ## API
 
-### [Cron](index.js#L26)
+### [Cron](index.js#L31)
 Main `Cron` class for creating a new instance to manage cron jobs.
 
 
@@ -26,18 +26,23 @@ Main `Cron` class for creating a new instance to manage cron jobs.
 * `ref` **{Object}**: Instance of a [firebase][] reference pointing to the root of a [firebase][].    
 * `queue` **{Object}**: Instance of a [firebase][] refernece pointing to a [firebase-queue][].    
 * `options` **{Object}**: Options specifying where the cron jobs are stored.    
-* `options.endpoint` **{String}**: Specific endpoint relative to the `ref` where the cron jobs are stored.    
+* `options.endpoint` **{String}**: Specific endpoint relative to the `ref` where the cron jobs are stored (defaults to `jobs`.    
 
 **Example**
 
 
 
 ```js
+var Firebase = require('firebase');
+var ref = new Firebase('https://{your-firebase}.firebaseio.com');
+var queueRef = new Firebase('https://{your-firebase}.firebaseio.com/queue');
+var options = {endpoint: 'jobs'};
+
 var cron = new Cron(ref, queueRef, options);
 ```
 
 
-### [.addJob](index.js#L56)
+### [.addJob](index.js#L61)
 
 Add a new cron job.
 
@@ -50,7 +55,7 @@ Add a new cron job.
 
 
 
-### [.updateJob](index.js#L77)
+### [.updateJob](index.js#L82)
 
 Update a cron job.
 
@@ -63,7 +68,7 @@ Update a cron job.
 
 
 
-### [.deleteJob](index.js#L96)
+### [.deleteJob](index.js#L101)
 
 Remove a cron job.
 
@@ -74,7 +79,7 @@ Remove a cron job.
 
 
 
-### [.getJob](index.js#L108)
+### [.getJob](index.js#L113)
 
 Get a cron job.
 
@@ -85,7 +90,7 @@ Get a cron job.
 
 
 
-### [.getJobs](index.js#L121)
+### [.getJobs](index.js#L126)
 
 Get all of the cron jobs.
 
@@ -95,7 +100,7 @@ Get all of the cron jobs.
 
 
 
-### [.waitingJobs](index.js#L135)
+### [.waitingJobs](index.js#L140)
 
 Get all of the scheduled/waiting jobs.
 
@@ -105,7 +110,7 @@ Get all of the scheduled/waiting jobs.
 
 
 
-### [.run](index.js#L153)
+### [.run](index.js#L158)
 
 Start running the cron manager.
 

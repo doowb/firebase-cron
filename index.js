@@ -9,6 +9,20 @@
 
 var utils = require('./lib/utils');
 
+/**
+ * Main `Cron` class for creating a new instance to manage cron jobs.
+ *
+ * ```js
+ * var cron = new Cron(ref, queueRef, options);
+ * ```
+ *
+ * @param {Object} `ref` Instance of a [firebase][] reference pointing to the root of a [firebase][].
+ * @param {Object} `queue` Instance of a [firebase][] refernece pointing to a [firebase-queue][].
+ * @param {Object} `options` Options specifying where the cron jobs are stored.
+ * @param {String} `options.endpoint` Specific endpoint relative to the `ref` where the cron jobs are stored.
+ * @api public
+ */
+
 function Cron(ref, queue, options) {
   if (!(this instanceof Cron)) {
     return new Cron(ref, options);
@@ -29,6 +43,16 @@ function Cron(ref, queue, options) {
   this.ref = this.root.child(this.options.endpoint || 'jobs');
 }
 
+/**
+ * Add a new cron job.
+ *
+ * @param {String} `name` Name of the cron job.
+ * @param {String} `tab` Cron job schedule. See [cron job patterns]() for specifics.
+ * @param {Object} `data` Data to be pushed onto the [firebase-queue][] when job is run.
+ * @param {Function} `cb` Callback function that is called after the job is added to the database.
+ * @api public
+ */
+
 Cron.prototype.addJob = function(name, tab, data, cb) {
   var schedule = utils.cron.time(tab);
   var next = schedule._getNextDateFrom(this.remoteDate());
@@ -39,6 +63,16 @@ Cron.prototype.addJob = function(name, tab, data, cb) {
   };
   this.ref.child(name).update(job, cb);
 };
+
+/**
+ * Update a cron job.
+ *
+ * @param {String} `name` Name of the cron job.
+ * @param {String} `tab` Cron job schedule. See [cron job patterns]() for specifics.
+ * @param {Object} `data` Data to be pushed onto the [firebase-queue][] when job is run.
+ * @param {Function} `cb` Callback function that is called after the job is updated in the database.
+ * @api public
+ */
 
 Cron.prototype.updateJob = function(name, tab, data, cb) {
   var schedule = utils.cron.time(tab);
@@ -51,9 +85,25 @@ Cron.prototype.updateJob = function(name, tab, data, cb) {
   this.ref.child(name).update(job, cb);
 };
 
+/**
+ * Remove a cron job.
+ *
+ * @param {String} `name` Name of the cron job.
+ * @param {Function} `cb` Callback function that is called after the job is removed from the database.
+ * @api public
+ */
+
 Cron.prototype.deleteJob = function(name, cb) {
   this.ref.child(name).remove(cb);
 };
+
+/**
+ * Get a cron job.
+ *
+ * @param {String} `name` Name of the cron job.
+ * @param {Function} `cb` Callback function that is called with any errors or the job.
+ * @api public
+ */
 
 Cron.prototype.getJob = function(name, cb) {
   this.ref.child(name).once('value', function(snapshot) {
@@ -61,11 +111,26 @@ Cron.prototype.getJob = function(name, cb) {
   });
 };
 
+/**
+ * Get all of the cron jobs.
+ *
+ * @param {Function} `cb` Callback function that is called retrieving all of the jobs.
+ * @api public
+ */
+
 Cron.prototype.getJobs = function(cb) {
   this.ref.once('value', function(snapshot) {
     cb(null, snapshot.val());
   });
 };
+
+
+/**
+ * Get all of the scheduled/waiting jobs.
+ *
+ * @param {Function} `cb` Callback function that is called after retrieveing all of the waiting jobs.
+ * @api public
+ */
 
 Cron.prototype.waitingJobs = function(cb) {
   var now = this.remoteDate();
@@ -75,6 +140,15 @@ Cron.prototype.waitingJobs = function(cb) {
       cb(null, snapshot.val());
     });
 };
+
+
+/**
+ * Start running the cron manager.
+ *
+ * @param {Function} `cb` Callback function that is called each time manager checks for jobs to run.
+ * @param {Function} `error` Callback function that is called if an error occurrs.
+ * @api public
+ */
 
 Cron.prototype.run = function(cb, error) {
   var self = this;
@@ -130,5 +204,9 @@ Cron.prototype.run = function(cb, error) {
     stop();
   };
 };
+
+/**
+ * Exposes `Cron`
+ */
 
 module.exports = Cron;

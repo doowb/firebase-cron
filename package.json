@@ -33,5 +33,13 @@
     "mocha": "*",
     "should": "*"
   },
-  "keywords": []
+  "keywords": [],
+  "verb": {
+    "related": {
+      "list": [
+        "firebase",
+        "firebase-queue"
+      ]
+    }
+  }
 }

@@ -33,7 +33,15 @@
     "mocha": "^2.3.4",
     "mockfirebase": "^0.12.0"
   },
-  "keywords": [],
+  "keywords": [
+    "cron",
+    "firebase",
+    "firebase-cron",
+    "firebase-queue",
+    "queue",
+    "schedule",
+    "scheduled"
+  ],
   "verb": {
     "related": {
       "list": [

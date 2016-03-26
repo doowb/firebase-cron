@@ -24,15 +24,19 @@ var utils = require('./lib/utils');
  * @param {Object} `ref` Instance of a [firebase][] reference pointing to the root of a [firebase][].
  * @param {Object} `queue` Instance of a [firebase][] refernece pointing to a [firebase-queue][].
  * @param {Object} `options` Options specifying where the cron jobs are stored.
- * @param {String} `options.endpoint` Specific endpoint relative to the `ref` where the cron jobs are stored (defaults to `jobs`.
+ * @param {String} `options.endpoint` Specific endpoint relative to the `ref` where the cron jobs are stored (defaults to `jobs`).
+ * @param {Number} `options.interval` Optional interval in milliseconds to use when calling `.run` (defaults to 1000).
  * @api public
  */
 
 function Cron(ref, queue, options) {
   if (!(this instanceof Cron)) {
-    return new Cron(ref, options);
+    return new Cron(ref, queue, options);
   }
-  this.options = options || {};
+  this.options = utils.extend({
+    interval: 1000,
+    endpoint: 'jobs'
+  }, options);
 
   if (!ref) {
     throw new Error('expected `ref` to be a firebase reference.');
@@ -45,7 +49,7 @@ function Cron(ref, queue, options) {
   this.root = ref;
   this.queue = queue;
   this.remoteDate = utils.remoteDate(this.root);
-  this.ref = this.root.child(this.options.endpoint || 'jobs');
+  this.ref = this.root.child(this.options.endpoint);
 }
 
 /**
@@ -157,6 +161,7 @@ Cron.prototype.waitingJobs = function(cb) {
 
 Cron.prototype.run = function(cb, error) {
   var self = this;
+  var interval = this.options.interval;
 
   var id = null;
   var running = true;
@@ -170,7 +175,7 @@ Cron.prototype.run = function(cb, error) {
     var done = function(err) {
       stop();
       if (err) return error(err);
-      id = setTimeout(execute.bind(null, done), 1000);
+      id = setTimeout(execute.bind(null, done), interval);
     };
 
     stop();

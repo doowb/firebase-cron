@@ -22,10 +22,13 @@ var ref = new Firebase(config.FIREBASE_URL);
 
 // firebase-queue reference. This should be the same reference that you would use in a firebase-queue.
 // Data from cron jobs will be pushed into the `tasks` property at the scheduled time.
-var queueRef = new Firebase(config.FIREBASE_URL + '/queue');
+var queueRef = new Firebase(config.FIREBASE_URL + '/example-queue');
 
-// create a new Cron instance that stores cron jobs at the `jobs` endpoint.
-var cron = new Cron(ref, queueRef, {endpoint: 'jobs'});
+// create a new Cron instance that stores cron jobs at the `example-jobs` endpoint.
+var cron = new Cron(ref, queueRef, {
+  interval: 2000,
+  endpoint: 'example-jobs'
+});
 
 /**
  * Exposes `cron` for use in examples

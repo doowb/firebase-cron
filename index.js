@@ -7,7 +7,8 @@
 
 'use strict';
 
-const utils = require('./lib/utils');
+const cron = require('cron');
+const moment = require('moment');
 
 /**
  * Main `Cron` class for creating a new instance to manage cron jobs.
@@ -48,8 +49,15 @@ function Cron(ref, queue, options) {
 
   this.root = ref;
   this.queue = queue;
-  this.remoteDate = utils.remoteDate(this.root);
+
+  let offset = 0;
+  let remoteDate = null;
+  this.remoteDate = () => Date.now() + offset;
   this.ref = this.root.child(this.options.endpoint);
+
+  this.root.child('/.info/serverTimeOffset').on('value', function(snapshot) {
+    offset = snapshot.val() || 0;
+  });
 }
 
 /**
@@ -63,7 +71,7 @@ function Cron(ref, queue, options) {
  */
 
 Cron.prototype.addJob = function(name, pattern, data, cb) {
-  const schedule = utils.cron.time(pattern);
+  const schedule = cron.time(pattern);
   const next = schedule._getNextDateFrom(this.remoteDate());
   const job = {
     pattern: pattern,
@@ -86,7 +94,7 @@ Cron.prototype.addJob = function(name, pattern, data, cb) {
  */
 
 Cron.prototype.updateJob = function(name, pattern, data, cb) {
-  const schedule = utils.cron.time(pattern);
+  const schedule = cron.time(pattern);
   const next = schedule._getNextDateFrom(this.remoteDate());
   const job = {
     pattern: pattern,
@@ -207,11 +215,11 @@ Cron.prototype.run = function(cb, error) {
 
       for (const name in jobs) {
         const job = jobs[name];
-        const schedule = utils.cron.time(job.pattern);
+        const schedule = cron.time(job.pattern);
         const lastRun = new Date(job.nextRun);
         lastRun.setSeconds(lastRun.getSeconds() + 1);
         job.nextRun = +schedule._getNextDateFrom(lastRun);
-        job.lastRun = +utils.moment(lastRun);
+        job.lastRun = +moment(lastRun);
         await self.queue.child('tasks').push(job.data);
       }
 

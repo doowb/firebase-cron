@@ -7,8 +7,8 @@
 
 'use strict';
 
-const cron = require('cron');
 const moment = require('moment');
+const parser = require('cron-parser');
 
 /**
  * Main `Cron` class for creating a new instance to manage cron jobs.
@@ -71,11 +71,10 @@ function Cron(ref, queue, options) {
  */
 
 Cron.prototype.addJob = function(name, pattern, data) {
-  const schedule = cron.time(pattern);
-  const next = schedule._getNextDateFrom(this.remoteDate());
+  const schedule = parser.parseExpression(pattern, {currentDate: this.remoteDate()});
   const job = {
     pattern: pattern,
-    nextRun: +next,
+    nextRun: +schedule.next().toDate(),
     data: data
   };
   return this.ref.child(name).update(job);
@@ -92,11 +91,10 @@ Cron.prototype.addJob = function(name, pattern, data) {
  */
 
 Cron.prototype.updateJob = function(name, pattern, data) {
-  const schedule = cron.time(pattern);
-  const next = schedule._getNextDateFrom(this.remoteDate());
+  const schedule = parser.parseExpression(pattern, {currentDate: this.remoteDate()});
   const job = {
     pattern: pattern,
-    nextRun: +next,
+    nextRun: +schedule.next().toDate(),
     data: data
   };
   return this.ref.child(name).update(job);
@@ -196,10 +194,11 @@ Cron.prototype.run = function(cb, error) {
     if (!jobs) return;
     for (const name in jobs) {
       const job = jobs[name];
-      const schedule = cron.time(job.pattern);
       const lastRun = new Date(job.nextRun);
       lastRun.setSeconds(lastRun.getSeconds() + 1);
-      job.nextRun = +schedule._getNextDateFrom(lastRun);
+
+      const schedule = parser.parseExpression(job.pattern, {currentDate: lastRun});
+      job.nextRun = +schedule.next().toDate();
       job.lastRun = +moment(lastRun);
       await self.queue.child('tasks').push(job.data);
     }

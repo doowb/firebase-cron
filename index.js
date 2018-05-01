@@ -1,8 +1,8 @@
 /*!
  * firebase-cron <https://github.com/doowb/firebase-cron>
  *
- * Copyright (c) 2015, Brian Woodward.
- * Licensed under the MIT License.
+ * Copyright (c) 2015-2018, Brian Woodward.
+ * Released under the MIT License.
  */
 
 'use strict';

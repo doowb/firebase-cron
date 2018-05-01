@@ -66,11 +66,11 @@ function Cron(ref, queue, options) {
  * @param {String} `name` Name of the cron job.
  * @param {String} `pattern` Cron job pattern. See [cron job patterns](http://crontab.org/) for specifics.
  * @param {Object} `data` Data to be pushed onto the [firebase-queue][] when job is run.
- * @param {Function} `cb` Callback function that is called after the job is added to the database.
+ * @returns {Promise} Returns a promise that is resolved when the job has been updated.
  * @api public
  */
 
-Cron.prototype.addJob = function(name, pattern, data, cb) {
+Cron.prototype.addJob = function(name, pattern, data) {
   const schedule = cron.time(pattern);
   const next = schedule._getNextDateFrom(this.remoteDate());
   const job = {
@@ -78,9 +78,7 @@ Cron.prototype.addJob = function(name, pattern, data, cb) {
     nextRun: +next,
     data: data
   };
-  return this.ref.child(name).update(job)
-    .then(() => cb())
-    .catch(cb);
+  return this.ref.child(name).update(job);
 };
 
 /**
@@ -89,11 +87,11 @@ Cron.prototype.addJob = function(name, pattern, data, cb) {
  * @param {String} `name` Name of the cron job.
  * @param {String} `pattern` Cron job pattern. See [cron job patterns](http://crontab.org/) for specifics.
  * @param {Object} `data` Data to be pushed onto the [firebase-queue][] when job is run.
- * @param {Function} `cb` Callback function that is called after the job is updated in the database.
+ * @returns {Promise} Returns a promise that is resolved when the job has been added.
  * @api public
  */
 
-Cron.prototype.updateJob = function(name, pattern, data, cb) {
+Cron.prototype.updateJob = function(name, pattern, data) {
   const schedule = cron.time(pattern);
   const next = schedule._getNextDateFrom(this.remoteDate());
   const job = {
@@ -101,67 +99,58 @@ Cron.prototype.updateJob = function(name, pattern, data, cb) {
     nextRun: +next,
     data: data
   };
-  return this.ref.child(name).update(job)
-    .then(() => cb())
-    .catch(cb);
+  return this.ref.child(name).update(job);
 };
 
 /**
  * Remove a cron job.
  *
  * @param {String} `name` Name of the cron job.
- * @param {Function} `cb` Callback function that is called after the job is removed from the database.
+ * @returns {Promise} Returns a promise that is resolved when the job has been removed.
  * @api public
  */
 
-Cron.prototype.deleteJob = function(name, cb) {
-  this.ref.child(name).remove()
-    .then(() => cb())
-    .catch(cb);
+Cron.prototype.deleteJob = function(name) {
+  return this.ref.child(name).remove();
 };
 
 /**
  * Get a cron job.
  *
  * @param {String} `name` Name of the cron job.
- * @param {Function} `cb` Callback function that is called with any errors or the job.
+ * @returns {Promise} Returns a promise that is resolved with the job.
  * @api public
  */
 
-Cron.prototype.getJob = function(name, cb) {
-  this.ref.child(name).once('value', function(snapshot) {
-    cb(null, snapshot.val());
-  });
+Cron.prototype.getJob = function(name) {
+  return this.ref.child(name).once('value')
+    .then(snap => snap.val());
 };
 
 /**
  * Get all of the cron jobs.
  *
- * @param {Function} `cb` Callback function that is called retrieving all of the jobs.
+ * @returns {Promise} Returns a promise that is resolved with all of the jobs.
  * @api public
  */
 
-Cron.prototype.getJobs = function(cb) {
-  this.ref.once('value', function(snapshot) {
-    cb(null, snapshot.val());
-  });
+Cron.prototype.getJobs = function() {
+  return this.ref.once('value')
+    .then(snap => snap.val());
 };
 
 
 /**
  * Get all of the scheduled/waiting jobs.
  *
- * @param {Function} `cb` Callback function that is called after retrieveing all of the waiting jobs.
+ * @returns {Promise} Returns a promise that is resolved with the waiting jobs.
  * @api public
  */
 
-Cron.prototype.waitingJobs = function(cb) {
+Cron.prototype.waitingJobs = function() {
   const now = this.remoteDate();
-  this.ref.orderByChild('nextRun')
-    .endAt(now)
-    .once('value', function(snapshot) {
-      cb(null, snapshot.val());
-    });
+  return this.ref.orderByChild('nextRun').endAt(now).once('value')
+    .then(snap => snap.val());
 };
 
 
@@ -189,42 +178,33 @@ Cron.prototype.run = function(cb, error) {
     const done = function(err) {
       stop();
       if (err) return error(err);
-      id = setTimeout(execute.bind(null, done), interval);
+      id = setTimeout(() => execute().then(done).catch(done), interval);
     };
 
     stop();
-    execute(done);
+    execute().then(done).catch(done);
   }
 
   function removeHandler() {
     self.ref.off('value', handleChanges);
   }
 
-  function execute(done) {
-    self.waitingJobs(async function(err, jobs) {
-      if (err) {
-        done(err);
-        return;
-      }
+  async function execute() {
+    const jobs = await self.waitingJobs();
+    cb(jobs);
 
-      cb(jobs);
-      if (!jobs) {
-        done();
-        return;
-      }
+    if (!jobs) return;
+    for (const name in jobs) {
+      const job = jobs[name];
+      const schedule = cron.time(job.pattern);
+      const lastRun = new Date(job.nextRun);
+      lastRun.setSeconds(lastRun.getSeconds() + 1);
+      job.nextRun = +schedule._getNextDateFrom(lastRun);
+      job.lastRun = +moment(lastRun);
+      await self.queue.child('tasks').push(job.data);
+    }
 
-      for (const name in jobs) {
-        const job = jobs[name];
-        const schedule = cron.time(job.pattern);
-        const lastRun = new Date(job.nextRun);
-        lastRun.setSeconds(lastRun.getSeconds() + 1);
-        job.nextRun = +schedule._getNextDateFrom(lastRun);
-        job.lastRun = +moment(lastRun);
-        await self.queue.child('tasks').push(job.data);
-      }
-
-      self.ref.update(jobs, done);
-    });
+    await self.ref.update(jobs);
   }
 
   this.ref.on('value', handleChanges);

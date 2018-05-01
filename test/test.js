@@ -15,19 +15,20 @@ describe('firebase-cron', function() {
     cron = new Cron(ref, queueRef, options);
   }
 
-  function addJob(name, pattern, data) {
+  // helper used because the mock ref needs to be flushed after calling the cron method
+  const wrap = method => (...args) => {
     return new Promise((resolve, reject) => {
-      cron.addJob(name, pattern, data, err => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve();
-      });
+      cron[method](...args).then(resolve).catch(reject);
       ref.flush();
     });
-  }
+  };
 
+  const getJob = wrap('getJob');
+  const addJob = wrap('addJob');
+  const getJobs = wrap('getJobs');
+  const updateJob = wrap('updateJob');
+  const deleteJob = wrap('deleteJob');
+  const waitingJobs = wrap('waitingJobs');
 
   beforeEach(function() {
     createInstance();
@@ -72,110 +73,71 @@ describe('firebase-cron', function() {
     assert.deepEqual(cron.ref, jobsRef);
   });
 
-  it('should add a job', function(done) {
-    cron.addJob('test', '* * * * * *', {foo: 'bar'}, function(err) {
-      if (err) return done(err);
-      const data = ref.getData();
-      assert(data.hasOwnProperty('jobs'));
-      assert(data.jobs.hasOwnProperty('test'));
-      assert(data.jobs.test.hasOwnProperty('pattern'));
-      assert(data.jobs.test.hasOwnProperty('data'));
-      assert(data.jobs.test.hasOwnProperty('nextRun'));
-      assert.deepEqual(data.jobs.test.pattern, '* * * * * *');
-      assert.deepEqual(data.jobs.test.data, {foo: 'bar'});
-      done();
-    });
-    ref.flush();
+  it('should add a job', async () => {
+    await addJob('test', '* * * * * *', {foo: 'bar'});
+
+    const data = ref.getData();
+    assert(data.hasOwnProperty('jobs'));
+    assert(data.jobs.hasOwnProperty('test'));
+    assert(data.jobs.test.hasOwnProperty('pattern'));
+    assert(data.jobs.test.hasOwnProperty('data'));
+    assert(data.jobs.test.hasOwnProperty('nextRun'));
+    assert.deepEqual(data.jobs.test.pattern, '* * * * * *');
+    assert.deepEqual(data.jobs.test.data, {foo: 'bar'});
   });
 
-  it('should update a job', function(done) {
-    cron.addJob('test', '* * * * * *', {foo: 'bar'}, function(err) {
-      if (err) return done(err);
-      cron.updateJob('test', '00 * * * * *', {bar: 'baz'}, function(err) {
-        const data = ref.getData();
-        assert(data.hasOwnProperty('jobs'));
-        assert(data.jobs.hasOwnProperty('test'));
-        assert(data.jobs.test.hasOwnProperty('pattern'));
-        assert(data.jobs.test.hasOwnProperty('data'));
-        assert(data.jobs.test.hasOwnProperty('nextRun'));
-        assert.deepEqual(data.jobs.test.pattern, '00 * * * * *');
-        assert.deepEqual(data.jobs.test.data, {foo: 'bar', bar: 'baz'});
-        done();
-      });
-      ref.flush();
-    });
-    ref.flush();
+  it('should update a job', async () => {
+    await addJob('test', '* * * * * *', {foo: 'bar'});
+    await updateJob('test', '00 * * * * *', {bar: 'baz'});
+
+    const data = ref.getData();
+    assert(data.hasOwnProperty('jobs'));
+    assert(data.jobs.hasOwnProperty('test'));
+    assert(data.jobs.test.hasOwnProperty('pattern'));
+    assert(data.jobs.test.hasOwnProperty('data'));
+    assert(data.jobs.test.hasOwnProperty('nextRun'));
+    assert.deepEqual(data.jobs.test.pattern, '00 * * * * *');
+    assert.deepEqual(data.jobs.test.data, {foo: 'bar', bar: 'baz'});
   });
 
-  it('should get a job', function(done) {
-    cron.addJob('test', '* * * * * *', {foo: 'bar'}, function(err) {
-      if (err) return done(err);
-      cron.getJob('test', function(err, job) {
-        if (err) return done(err);
-        assert(job);
-        assert(job.hasOwnProperty('pattern'));
-        assert(job.hasOwnProperty('data'));
-        assert(job.hasOwnProperty('nextRun'));
-        assert.deepEqual(job.pattern, '* * * * * *');
-        assert.deepEqual(job.data, {foo: 'bar'});
-        done();
-      });
-      ref.flush();
-    });
-    ref.flush();
+  it('should get a job', async () => {
+    await addJob('test', '* * * * * *', {foo: 'bar'});
+    const job = await getJob('test');
+    assert(job);
+    assert(job.hasOwnProperty('pattern'));
+    assert(job.hasOwnProperty('data'));
+    assert(job.hasOwnProperty('nextRun'));
+    assert.deepEqual(job.pattern, '* * * * * *');
+    assert.deepEqual(job.data, {foo: 'bar'});
   });
 
-  it('should get all jobs', async function() {
+  it('should get all jobs', async () => {
     await addJob('test-1', '* * * * * *', {foo: 'bar'});
     await addJob('test-2', '* * * * * *', {bar: 'baz'});
-    return new Promise((resolve, reject) => {
-      cron.getJobs(function(err, jobs) {
-        if (err) return reject(err);
-        assert(jobs);
-        assert(jobs.hasOwnProperty('test-1'));
-        assert(jobs.hasOwnProperty('test-2'));
-        resolve();
-      });
-      ref.flush();
-    });
+    const jobs = await getJobs();
+    assert(jobs);
+    assert(jobs.hasOwnProperty('test-1'));
+    assert(jobs.hasOwnProperty('test-2'));
   });
 
-  it('should delete a job', async function() {
+  it('should delete a job', async () => {
     await addJob('test-1', '* * * * * *', {foo: 'bar'});
     await addJob('test-2', '* * * * * *', {bar: 'baz'});
-    return new Promise((resolve, reject) => {
-      cron.deleteJob('test-1', function(err) {
-        if (err) {
-          reject(err);
-          return;
-        }
+    await deleteJob('test-1');
 
-        const data = ref.getData();
-        assert(data.hasOwnProperty('jobs'));
-        assert(!data.jobs.hasOwnProperty('test-1'));
-        assert(data.jobs.hasOwnProperty('test-2'));
-        resolve();
-      });
-      ref.flush();
-    });
+    const data = ref.getData();
+    assert(data.hasOwnProperty('jobs'));
+    assert(!data.jobs.hasOwnProperty('test-1'));
+    assert(data.jobs.hasOwnProperty('test-2'));
   });
 
   // waiting on https://github.com/katowulf/mockfirebase/pull/61#issuecomment-168340400
-  it.skip('should get all waiting jobs', async function() {
+  it.skip('should get all waiting jobs', async () => {
     await addJob('test-1', '00 00 00 * * *', {foo: 'bar'});
     await addJob('test-2', '* * * * * *', {bar: 'baz'});
-    return new Promise((resolve, reject) => {
-      cron.waitingJobs(function(err, jobs) {
-        if (err) {
-          reject(err);
-          return;
-        }
-        assert(jobs);
-        assert(jobs.hasOwnProperty('test-1'));
-        assert(jobs.hasOwnProperty('test-2'));
-        resolve();
-      });
-      ref.flush();
-    });
+    const jobs = await waitingJobs();
+    assert(jobs);
+    assert(jobs.hasOwnProperty('test-1'));
+    assert(jobs.hasOwnProperty('test-2'));
   });
 });

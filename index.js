@@ -7,18 +7,18 @@
 
 'use strict';
 
-var utils = require('./lib/utils');
+const utils = require('./lib/utils');
 
 /**
  * Main `Cron` class for creating a new instance to manage cron jobs.
  *
  * ```js
- * var Firebase = require('firebase');
- * var ref = new Firebase('https://{your-firebase}.firebaseio.com');
- * var queueRef = new Firebase('https://{your-firebase}.firebaseio.com/queue');
- * var options = {endpoint: 'jobs'};
+ * const Firebase = require('firebase');
+ * const ref = new Firebase('https://{your-firebase}.firebaseio.com');
+ * const queueRef = new Firebase('https://{your-firebase}.firebaseio.com/queue');
+ * const options = {endpoint: 'jobs'};
  *
- * var cron = new Cron(ref, queueRef, options);
+ * const cron = new Cron(ref, queueRef, options);
  * ```
  *
  * @param {Object} `ref` Instance of a [firebase][] reference pointing to the root of a [firebase][].
@@ -63,9 +63,9 @@ function Cron(ref, queue, options) {
  */
 
 Cron.prototype.addJob = function(name, pattern, data, cb) {
-  var schedule = utils.cron.time(pattern);
-  var next = schedule._getNextDateFrom(this.remoteDate());
-  var job = {
+  const schedule = utils.cron.time(pattern);
+  const next = schedule._getNextDateFrom(this.remoteDate());
+  const job = {
     pattern: pattern,
     nextRun: +next,
     data: data
@@ -86,9 +86,9 @@ Cron.prototype.addJob = function(name, pattern, data, cb) {
  */
 
 Cron.prototype.updateJob = function(name, pattern, data, cb) {
-  var schedule = utils.cron.time(pattern);
-  var next = schedule._getNextDateFrom(this.remoteDate());
-  var job = {
+  const schedule = utils.cron.time(pattern);
+  const next = schedule._getNextDateFrom(this.remoteDate());
+  const job = {
     pattern: pattern,
     nextRun: +next,
     data: data
@@ -148,7 +148,7 @@ Cron.prototype.getJobs = function(cb) {
  */
 
 Cron.prototype.waitingJobs = function(cb) {
-  var now = this.remoteDate();
+  const now = this.remoteDate();
   this.ref.orderByChild('nextRun')
     .endAt(now)
     .once('value', function(snapshot) {
@@ -166,11 +166,11 @@ Cron.prototype.waitingJobs = function(cb) {
  */
 
 Cron.prototype.run = function(cb, error) {
-  var self = this;
-  var interval = this.options.interval;
+  const self = this;
+  const interval = this.options.interval;
 
-  var id = null;
-  var running = true;
+  let id = null;
+  let running = true;
   function stop() {
     if (id) clearTimeout(id);
     id = null;
@@ -178,7 +178,7 @@ Cron.prototype.run = function(cb, error) {
 
   function handleChanges(snapshot) {
     if (!running) return;
-    var done = function(err) {
+    const done = function(err) {
       stop();
       if (err) return error(err);
       id = setTimeout(execute.bind(null, done), interval);
@@ -193,22 +193,29 @@ Cron.prototype.run = function(cb, error) {
   }
 
   function execute(done) {
-    self.waitingJobs(function(err, jobs) {
-      if (err) return done(err);
+    self.waitingJobs(async function(err, jobs) {
+      if (err) {
+        done(err);
+        return;
+      }
 
       cb(jobs);
-      utils.async.eachOf(jobs, function(job, name, next) {
-        var schedule = utils.cron.time(job.pattern);
-        var lastRun = new Date(job.nextRun);
+      if (!jobs) {
+        done();
+        return;
+      }
+
+      for (const name in jobs) {
+        const job = jobs[name];
+        const schedule = utils.cron.time(job.pattern);
+        const lastRun = new Date(job.nextRun);
         lastRun.setSeconds(lastRun.getSeconds() + 1);
         job.nextRun = +schedule._getNextDateFrom(lastRun);
         job.lastRun = +utils.moment(lastRun);
-        self.queue.child('tasks').push(job.data, next);
-      }, function(err) {
-        if (err) return done(err);
-        if (!jobs) return done();
-        self.ref.update(jobs, done);
-      });
+        await self.queue.child('tasks').push(job.data);
+      }
+
+      self.ref.update(jobs, done);
     });
   }
 

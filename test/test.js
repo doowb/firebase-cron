@@ -1,20 +1,33 @@
 'use strict';
 
 /* deps:mocha */
-var async = require('async');
-var assert = require('assert');
-var Firebase = require('firebase-mock').MockFirebase;
-var Cron = require('../');
+const assert = require('assert');
+const Firebase = require('firebase-mock').MockFirebase;
+const Cron = require('../');
 
 describe('firebase-cron', function() {
-  var ref = null;
-  var queueRef = null;
-  var cron = null;
+  let ref = null;
+  let queueRef = null;
+  let cron = null;
   function createInstance(options) {
     ref = new Firebase('https://mock.firebaseio.com');
     queueRef = new Firebase('https://mock.firebaseio.com/queue');
     cron = new Cron(ref, queueRef, options);
   }
+
+  function addJob(name, pattern, data) {
+    return new Promise((resolve, reject) => {
+      cron.addJob(name, pattern, data, err => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve();
+      });
+      ref.flush();
+    });
+  }
+
 
   beforeEach(function() {
     createInstance();
@@ -45,7 +58,7 @@ describe('firebase-cron', function() {
   });
 
   it('should create an instance with the correct default references', function() {
-    var jobsRef = ref.child('jobs');
+    const jobsRef = ref.child('jobs');
     assert.deepEqual(cron.root, ref);
     assert.deepEqual(cron.queue, queueRef);
     assert.deepEqual(cron.ref, jobsRef);
@@ -53,7 +66,7 @@ describe('firebase-cron', function() {
 
   it('should create an instance with the correct custom jobs ref', function() {
     createInstance({endpoint: 'foo'});
-    var jobsRef = ref.child('foo');
+    const jobsRef = ref.child('foo');
     assert.deepEqual(cron.root, ref);
     assert.deepEqual(cron.queue, queueRef);
     assert.deepEqual(cron.ref, jobsRef);
@@ -62,7 +75,7 @@ describe('firebase-cron', function() {
   it('should add a job', function(done) {
     cron.addJob('test', '* * * * * *', {foo: 'bar'}, function(err) {
       if (err) return done(err);
-      var data = ref.getData();
+      const data = ref.getData();
       assert(data.hasOwnProperty('jobs'));
       assert(data.jobs.hasOwnProperty('test'));
       assert(data.jobs.test.hasOwnProperty('pattern'));
@@ -79,7 +92,7 @@ describe('firebase-cron', function() {
     cron.addJob('test', '* * * * * *', {foo: 'bar'}, function(err) {
       if (err) return done(err);
       cron.updateJob('test', '00 * * * * *', {bar: 'baz'}, function(err) {
-        var data = ref.getData();
+        const data = ref.getData();
         assert(data.hasOwnProperty('jobs'));
         assert(data.jobs.hasOwnProperty('test'));
         assert(data.jobs.test.hasOwnProperty('pattern'));
@@ -112,65 +125,57 @@ describe('firebase-cron', function() {
     ref.flush();
   });
 
-  it('should get all jobs', function(done) {
-    function addJob(name, pattern, data, cb) {
-      cron.addJob(name, pattern, data, cb);
-      ref.flush();
-    }
-
-    async.series([
-      async.apply(addJob, 'test-1', '* * * * * *', {foo: 'bar'}),
-      async.apply(addJob, 'test-2', '* * * * * *', {bar: 'baz'})
-    ], function(err) {
-      if (err) return done(err);
+  it('should get all jobs', async function() {
+    await addJob('test-1', '* * * * * *', {foo: 'bar'});
+    await addJob('test-2', '* * * * * *', {bar: 'baz'});
+    return new Promise((resolve, reject) => {
       cron.getJobs(function(err, jobs) {
-        if (err) return done(err);
+        if (err) return reject(err);
         assert(jobs);
         assert(jobs.hasOwnProperty('test-1'));
         assert(jobs.hasOwnProperty('test-2'));
-        done();
+        resolve();
       });
       ref.flush();
     });
   });
 
-  it('should delete a job', function(done) {
-    function addJob(name, pattern, data, cb) {
-      cron.addJob(name, pattern, data, cb);
-      ref.flush();
-    }
-
-    async.series([
-      async.apply(addJob, 'test-1', '* * * * * *', {foo: 'bar'}),
-      async.apply(addJob, 'test-2', '* * * * * *', {bar: 'baz'})
-    ], function(err) {
-      if (err) return done(err);
+  it('should delete a job', async function() {
+    await addJob('test-1', '* * * * * *', {foo: 'bar'});
+    await addJob('test-2', '* * * * * *', {bar: 'baz'});
+    return new Promise((resolve, reject) => {
       cron.deleteJob('test-1', function(err) {
-        var data = ref.getData();
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        const data = ref.getData();
         assert(data.hasOwnProperty('jobs'));
         assert(!data.jobs.hasOwnProperty('test-1'));
         assert(data.jobs.hasOwnProperty('test-2'));
-        done();
+        resolve();
       });
       ref.flush();
     });
   });
 
   // waiting on https://github.com/katowulf/mockfirebase/pull/61#issuecomment-168340400
-  it.skip('should get all waiting jobs', function(done) {
-    async.series([
-      async.apply(cron.addJob.bind(cron), 'test-1', '00 00 00 * * *', {foo: 'bar'}),
-      async.apply(cron.addJob.bind(cron), 'test-2', '* * * * * *', {bar: 'baz'})
-    ], function(err) {
-      if (err) return done(err);
+  it.skip('should get all waiting jobs', async function() {
+    await addJob('test-1', '00 00 00 * * *', {foo: 'bar'});
+    await addJob('test-2', '* * * * * *', {bar: 'baz'});
+    return new Promise((resolve, reject) => {
       cron.waitingJobs(function(err, jobs) {
-        if (err) return done(err);
+        if (err) {
+          reject(err);
+          return;
+        }
         assert(jobs);
         assert(jobs.hasOwnProperty('test-1'));
         assert(jobs.hasOwnProperty('test-2'));
-        done();
+        resolve();
       });
+      ref.flush();
     });
-    ref.flush();
   });
 });

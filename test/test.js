@@ -3,7 +3,7 @@
 /* deps:mocha */
 var async = require('async');
 var assert = require('assert');
-var Firebase = require('mockfirebase').MockFirebase;
+var Firebase = require('firebase-mock').MockFirebase;
 var Cron = require('../');
 
 describe('firebase-cron', function() {
@@ -86,9 +86,10 @@ describe('firebase-cron', function() {
         assert(data.jobs.test.hasOwnProperty('data'));
         assert(data.jobs.test.hasOwnProperty('nextRun'));
         assert.deepEqual(data.jobs.test.pattern, '00 * * * * *');
-        assert.deepEqual(data.jobs.test.data, {bar: 'baz'});
+        assert.deepEqual(data.jobs.test.data, {foo: 'bar', bar: 'baz'});
         done();
       });
+      ref.flush();
     });
     ref.flush();
   });
@@ -106,14 +107,20 @@ describe('firebase-cron', function() {
         assert.deepEqual(job.data, {foo: 'bar'});
         done();
       });
+      ref.flush();
     });
     ref.flush();
   });
 
   it('should get all jobs', function(done) {
+    function addJob(name, pattern, data, cb) {
+      cron.addJob(name, pattern, data, cb);
+      ref.flush();
+    }
+
     async.series([
-      async.apply(cron.addJob.bind(cron), 'test-1', '* * * * * *', {foo: 'bar'}),
-      async.apply(cron.addJob.bind(cron), 'test-2', '* * * * * *', {bar: 'baz'})
+      async.apply(addJob, 'test-1', '* * * * * *', {foo: 'bar'}),
+      async.apply(addJob, 'test-2', '* * * * * *', {bar: 'baz'})
     ], function(err) {
       if (err) return done(err);
       cron.getJobs(function(err, jobs) {
@@ -123,14 +130,19 @@ describe('firebase-cron', function() {
         assert(jobs.hasOwnProperty('test-2'));
         done();
       });
+      ref.flush();
     });
-    ref.flush();
   });
 
   it('should delete a job', function(done) {
+    function addJob(name, pattern, data, cb) {
+      cron.addJob(name, pattern, data, cb);
+      ref.flush();
+    }
+
     async.series([
-      async.apply(cron.addJob.bind(cron), 'test-1', '* * * * * *', {foo: 'bar'}),
-      async.apply(cron.addJob.bind(cron), 'test-2', '* * * * * *', {bar: 'baz'})
+      async.apply(addJob, 'test-1', '* * * * * *', {foo: 'bar'}),
+      async.apply(addJob, 'test-2', '* * * * * *', {bar: 'baz'})
     ], function(err) {
       if (err) return done(err);
       cron.deleteJob('test-1', function(err) {
@@ -140,8 +152,8 @@ describe('firebase-cron', function() {
         assert(data.jobs.hasOwnProperty('test-2'));
         done();
       });
+      ref.flush();
     });
-    ref.flush();
   });
 
   // waiting on https://github.com/katowulf/mockfirebase/pull/61#issuecomment-168340400

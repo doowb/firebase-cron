@@ -33,7 +33,7 @@ function Cron(ref, queue, options) {
   if (!(this instanceof Cron)) {
     return new Cron(ref, queue, options);
   }
-  this.options = utils.extend({
+  this.options = Object.assign({
     interval: 1000,
     endpoint: 'jobs'
   }, options);
@@ -70,7 +70,9 @@ Cron.prototype.addJob = function(name, pattern, data, cb) {
     nextRun: +next,
     data: data
   };
-  this.ref.child(name).update(job, cb);
+  return this.ref.child(name).update(job)
+    .then(() => cb())
+    .catch(cb);
 };
 
 /**
@@ -91,7 +93,9 @@ Cron.prototype.updateJob = function(name, pattern, data, cb) {
     nextRun: +next,
     data: data
   };
-  this.ref.child(name).update(job, cb);
+  return this.ref.child(name).update(job)
+    .then(() => cb())
+    .catch(cb);
 };
 
 /**
@@ -103,7 +107,9 @@ Cron.prototype.updateJob = function(name, pattern, data, cb) {
  */
 
 Cron.prototype.deleteJob = function(name, cb) {
-  this.ref.child(name).remove(cb);
+  this.ref.child(name).remove()
+    .then(() => cb())
+    .catch(cb);
 };
 
 /**

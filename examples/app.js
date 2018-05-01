@@ -6,8 +6,8 @@
  * endpoint to push job data to at the scheduled time.
  */
 
-var Firebase = require('firebase');
-var Cron = require('../');
+const firebase = require('firebase');
+const Cron = require('../');
 
 /**
  * config has a `FIREBASE_URL` property that points to the root of a firebase.
@@ -15,17 +15,18 @@ var Cron = require('../');
  * Use the `endpoint` option to specify where the `jobs` should be stored.
  */
 
-var config = require('../tmp/config');
+const config = require('../tmp/config');
+firebase.initializeApp(config);
 
 // normal firebase reference
-var ref = new Firebase(config.FIREBASE_URL);
+const ref = firebase.database().ref();
 
 // firebase-queue reference. This should be the same reference that you would use in a firebase-queue.
 // Data from cron jobs will be pushed into the `tasks` property at the scheduled time.
-var queueRef = new Firebase(config.FIREBASE_URL + '/example-queue');
+const queueRef = firebase.database().ref('example-queue');
 
 // create a new Cron instance that stores cron jobs at the `example-jobs` endpoint.
-var cron = new Cron(ref, queueRef, {
+const cron = new Cron(ref, queueRef, {
   interval: 2000,
   endpoint: 'example-jobs'
 });

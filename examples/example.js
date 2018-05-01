@@ -1,6 +1,6 @@
 'use strict';
 
-var cron = require('./app');
+const cron = require('./app');
 
 /**
  * Add a cron job that will run on the specified cron schedule.
@@ -38,7 +38,7 @@ cron.addJob('test', '00 * * * * *', {foo: 'bar'}, function(err) {
         if (err) return console.error(err);
         console.log('---- All jobs ----');
         Object.keys(jobs).forEach(function(name) {
-          var job = jobs[name];
+          const job = jobs[name];
           console.log(name, new Date(job.nextRun));
         });
         console.log();

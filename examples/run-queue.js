@@ -6,14 +6,14 @@
  * cron jobs will be pushing tasks to.
  */
 
-var colors = require('ansi-colors');
-var Queue = require('firebase-queue');
+const colors = require('ansi-colors');
+const Queue = require('firebase-queue');
 
 // only used to ensure the same queue endpoint is used.
-var cron = require('./app');
+const cron = require('./app');
 
 // create a new Queue instance using the same queue reference that cron is using
-var queue = new Queue(cron.queue, function(data, progress, resolve, reject) {
+const queue = new Queue(cron.queue, function(data, progress, resolve, reject) {
   console.log(colors.cyan('-------- Queue starting [ ' + new Date() + ' ] ---------'));
   console.log();
   console.log(data);

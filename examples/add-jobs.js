@@ -3,16 +3,23 @@
 /**
  * Add 3 jobs (A, B, C) with different schedules.
  */
+const util = require('util');
+const cron = require('./app');
 
-var async = require('async');
-var cron = require('./app');
+(async () => {
+  const addJob = util.promisify(cron.addJob.bind(cron));
 
-var i = 1;
-async.eachSeries(['A', 'B', 'C'], function(name, next) {
-  var pattern = '1-' + ((i++) * 10) + '/5 * * * * *';
-  cron.addJob(name, pattern, {name: name}, next);
-}, function(err) {
-  if (err) console.error(err);
+  let i = 1;
+  for (const name of ['A', 'B', 'C']) {
+    const pattern = '1-' + ((i++) * 10) + '/5 * * * * *';
+    await addJob(name, pattern, {name: name});
+  }
+
   console.log('done');
   process.exit();
+
+})().catch(err => {
+  console.error(err);
+  process.exit(1);
 });
+

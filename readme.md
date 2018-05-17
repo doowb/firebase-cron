@@ -1,12 +1,12 @@
-# firebase-cron [![NPM version](https://img.shields.io/npm/v/firebase-cron.svg)](https://www.npmjs.com/package/firebase-cron)
+# firebase-cron [![NPM version](https://img.shields.io/npm/v/firebase-cron.svg?style=flat)](https://www.npmjs.com/package/firebase-cron)
 
 > Store and run cron jobs with firebase.
 
 ## Install
-Install with [npm](https://www.npmjs.com/)
+Install with [npm](https://www.npmjs.com/):
 
 ```sh
-$ npm i firebase-cron --save
+$ npm install --save firebase-cron
 ```
 
 ## Usage
@@ -17,32 +17,29 @@ var Cron = require('firebase-cron');
 
 ## API
 
-### [Cron](index.js#L31)
+### [Cron](index.js#L33)
 Main `Cron` class for creating a new instance to manage cron jobs.
-
 
 **Params**
 
 * `ref` **{Object}**: Instance of a [firebase][] reference pointing to the root of a [firebase][].    
 * `queue` **{Object}**: Instance of a [firebase][] refernece pointing to a [firebase-queue][].    
 * `options` **{Object}**: Options specifying where the cron jobs are stored.    
-* `options.endpoint` **{String}**: Specific endpoint relative to the `ref` where the cron jobs are stored (defaults to `jobs`.    
+* `options.endpoint` **{String}**: Specific endpoint relative to the `ref` where the cron jobs are stored (defaults to `jobs`).    
+* `options.interval` **{Number}**: Optional interval in milliseconds to use when calling `.run` (defaults to 1000).    
 
 **Example**
 
-
-
 ```js
-var Firebase = require('firebase');
-var ref = new Firebase('https://{your-firebase}.firebaseio.com');
-var queueRef = new Firebase('https://{your-firebase}.firebaseio.com/queue');
-var options = {endpoint: 'jobs'};
+const Firebase = require('firebase');
+const ref = new Firebase('https://{your-firebase}.firebaseio.com');
+const queueRef = new Firebase('https://{your-firebase}.firebaseio.com/queue');
+const options = {endpoint: 'jobs'};
 
-var cron = new Cron(ref, queueRef, options);
+const cron = new Cron(ref, queueRef, options);
 ```
 
-
-### [.addJob](index.js#L61)
+### [.addJob](index.js#L73)
 
 Add a new cron job.
 
@@ -51,11 +48,9 @@ Add a new cron job.
 * `name` **{String}**: Name of the cron job.    
 * `pattern` **{String}**: Cron job pattern. See [cron job patterns](http://crontab.org/) for specifics.    
 * `data` **{Object}**: Data to be pushed onto the [firebase-queue][] when job is run.    
-* `cb` **{Function}**: Callback function that is called after the job is added to the database.    
+* `returns` **{Promise}**: Returns a promise that is resolved when the job has been updated.  
 
-
-
-### [.updateJob](index.js#L82)
+### [.updateJob](index.js#L93)
 
 Update a cron job.
 
@@ -64,53 +59,39 @@ Update a cron job.
 * `name` **{String}**: Name of the cron job.    
 * `pattern` **{String}**: Cron job pattern. See [cron job patterns](http://crontab.org/) for specifics.    
 * `data` **{Object}**: Data to be pushed onto the [firebase-queue][] when job is run.    
-* `cb` **{Function}**: Callback function that is called after the job is updated in the database.    
+* `returns` **{Promise}**: Returns a promise that is resolved when the job has been added.  
 
-
-
-### [.deleteJob](index.js#L101)
+### [.deleteJob](index.js#L111)
 
 Remove a cron job.
 
 **Params**
 
 * `name` **{String}**: Name of the cron job.    
-* `cb` **{Function}**: Callback function that is called after the job is removed from the database.    
+* `returns` **{Promise}**: Returns a promise that is resolved when the job has been removed.  
 
-
-
-### [.getJob](index.js#L113)
+### [.getJob](index.js#L123)
 
 Get a cron job.
 
 **Params**
 
 * `name` **{String}**: Name of the cron job.    
-* `cb` **{Function}**: Callback function that is called with any errors or the job.    
+* `returns` **{Promise}**: Returns a promise that is resolved with the job.  
 
-
-
-### [.getJobs](index.js#L126)
+### [.getJobs](index.js#L135)
 
 Get all of the cron jobs.
 
-**Params**
+* `returns` **{Promise}**: Returns a promise that is resolved with all of the jobs.  
 
-* `cb` **{Function}**: Callback function that is called retrieving all of the jobs.    
-
-
-
-### [.waitingJobs](index.js#L140)
+### [.waitingJobs](index.js#L148)
 
 Get all of the scheduled/waiting jobs.
 
-**Params**
+* `returns` **{Promise}**: Returns a promise that is resolved with the waiting jobs.  
 
-* `cb` **{Function}**: Callback function that is called after retrieveing all of the waiting jobs.    
-
-
-
-### [.run](index.js#L158)
+### [.run](index.js#L163)
 
 Start running the cron manager.
 
@@ -119,36 +100,34 @@ Start running the cron manager.
 * `cb` **{Function}**: Callback function that is called each time manager checks for jobs to run.    
 * `error` **{Function}**: Callback function that is called if an error occurrs.    
 
-
-
-
 ## Related projects
-* [firebase](https://www.npmjs.com/package/firebase): Firebase library for Node.js | [homepage](undefined)
-* [firebase-queue](https://www.npmjs.com/package/firebase-queue): A fault-tolerant, multi-worker, multi-stage job pipeline built on Firebase | [homepage](https://github.com/firebase/firebase-queue)
+- [firebase-queue](https://www.npmjs.com/package/firebase-queue): A fault-tolerant, multi-worker, multi-stage job pipeline built on Firebase | [homepage](https://github.com/firebase/firebase-queue "A fault-tolerant, multi-worker, multi-stage job pipeline built on Firebase")
+- [firebase](https://www.npmjs.com/package/firebase): Firebase JavaScript library for web and Node.js | [homepage](https://firebase.google.com/ "Firebase JavaScript library for web and Node.js")
 
 ## Running tests
-Install dev dependencies:
+Running and reviewing unit tests is a great way to get familiarized with a library and its API. You can install dependencies and run tests with the following command:
 
 ```sh
-$ npm i -d && npm test
+$ npm install && npm test
 ```
 
 ## Contributing
-Pull requests and stars are always welcome. For bugs and feature requests, [please create an issue](https://github.com/doowb/firebase-cron/issues/new).
+Pull requests and stars are always welcome. For bugs and feature requests, [please create an issue](../../issues/new).
 
 ## Author
 **Brian Woodward**
 
 + [github/doowb](https://github.com/doowb)
-+ [twitter/doowb](http://twitter.com/doowb)
++ [twitter/doowb](https://twitter.com/doowb)
 
 ## License
-Copyright © 2016 [Brian Woodward](https://github.com/doowb)
-Released under the MIT license.
+Copyright © 2018, [Brian Woodward](https://github.com/doowb).
+MIT
 
 ***
 
-_This file was generated by [verb](https://github.com/verbose/verb) on January 01, 2016._
+_This file was generated by [verb-generate-readme](https://github.com/verbose/verb-generate-readme), v0.6.0, on May 17, 2018._
 
 [firebase]: https://www.firebase.com/
 [firebase-queue]: https://github.com/firebase/firebase-queue
+

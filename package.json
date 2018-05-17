@@ -1,7 +1,7 @@
 {
   "name": "firebase-cron",
   "description": "Store and run cron jobs with firebase.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "homepage": "https://github.com/doowb/firebase-cron",
   "author": "Brian Woodward (https://github.com/doowb)",
   "repository": "doowb/firebase-cron",
@@ -24,7 +24,8 @@
     "ansi-colors": "^1.1.0",
     "firebase": "^4.13.1",
     "firebase-mock": "^2.2.2",
-    "firebase-queue": "^1.6.1"
+    "firebase-queue": "^1.6.1",
+    "mocha": "^5.1.1"
   },
   "keywords": [
     "cron",
